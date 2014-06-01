@@ -4,8 +4,8 @@ import java.util.*;
 public class PredictionEngine
 {
 	//================================================================================
-    // Fields
-    //================================================================================
+	// Fields
+	//================================================================================
 
 	// Optimal prediction algorithm vote-weights, determined through testing
 	final double NB_WEIGHT = .681;	/** Optimal Naive Bayes vote-weight */
@@ -31,8 +31,8 @@ public class PredictionEngine
 	
 	
 	//================================================================================
-    // Constructors
-    //================================================================================
+	// Constructors
+	//================================================================================
 
 	/**
 	 * Creates a new PredictionEngine instance from a File handle
@@ -67,8 +67,8 @@ public class PredictionEngine
 	
 
 	//================================================================================
-    // Functions
-    //================================================================================
+	// Functions
+	//================================================================================
 
 	/**
 	 * Get data from file and store in data hashmap, then populate evidence term
@@ -310,7 +310,7 @@ public class PredictionEngine
 	 * ensemble-vote style to predict the player's next move from the current game history
 	 * @param  player	- history of player moves
 	 * @param  computer	- history of computer moves
-	 * @return the character ('R', 'P', 'S') representing the player's predicted move
+	 * @return the character ('R', 'P', 'S') representing the suggested computer move
 	 */
 	public char determineOptimalMove(String player, String computer) {
 		double R, P, S;
@@ -427,8 +427,8 @@ public class PredictionEngine
 	
 
 	//================================================================================
-    // Testing functions	TODO: [Potentially] move to separate class
-    //================================================================================
+	// Testing functions	TODO: [Potentially] move to separate class
+	//================================================================================
 
 	public void expandInput()
 	{	
