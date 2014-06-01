@@ -189,9 +189,9 @@ public class PredictionEngine
 			return;
 		}
 
-		generateComputerCombinations(player, partialHistory.concat("r"), charsLeft-1, playerCounts, computerCounts);
-		generateComputerCombinations(player, partialHistory.concat("p"), charsLeft-1, playerCounts, computerCounts);
-		generateComputerCombinations(player, partialHistory.concat("s"), charsLeft-1, playerCounts, computerCounts);
+		generateComputerCombinations(player, partialHistory.concat("R"), charsLeft-1, playerCounts, computerCounts);
+		generateComputerCombinations(player, partialHistory.concat("P"), charsLeft-1, playerCounts, computerCounts);
+		generateComputerCombinations(player, partialHistory.concat("S"), charsLeft-1, playerCounts, computerCounts);
 	}
 	
 	/**
@@ -218,9 +218,9 @@ public class PredictionEngine
 			return;
 		}
 
-		generatePlayerCombinations(partialHistory.concat("r"), computer, charsLeft-1, playerCounts, computerCounts);
-		generatePlayerCombinations(partialHistory.concat("p"), computer, charsLeft-1, playerCounts, computerCounts);
-		generatePlayerCombinations(partialHistory.concat("s"), computer, charsLeft-1, playerCounts, computerCounts);
+		generatePlayerCombinations(partialHistory.concat("R"), computer, charsLeft-1, playerCounts, computerCounts);
+		generatePlayerCombinations(partialHistory.concat("P"), computer, charsLeft-1, playerCounts, computerCounts);
+		generatePlayerCombinations(partialHistory.concat("S"), computer, charsLeft-1, playerCounts, computerCounts);
 	}
 	
 	/**
