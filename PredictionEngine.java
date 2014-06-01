@@ -3,10 +3,14 @@ import java.util.*;
 
 public class PredictionEngine
 {
+	//================================================================================
+    // Fields
+    //================================================================================
+
 	// Optimal prediction algorithm vote-weights, determined through testing
 	final double NB_WEIGHT = .681;	/** Optimal Naive Bayes vote-weight */
 	final double FB_WEIGHT = .642;	/** Optimal Full Bayes vote-weight */
-	final double ANN_WEIGHT = .639;/** Optimal Adapted Nearest Neighbor vote-weight */
+	final double ANN_WEIGHT = .639;	/** Optimal Adapted Nearest Neighbor vote-weight */
 
 	File dataFile;	/** Handle to file holding the game data */
 	
@@ -25,6 +29,11 @@ public class PredictionEngine
 	int numPapers;	/** Number of instances where player played "paper" in the dataset */
 	int numScissors;	/** Number of instances where player played "scissors" in the dataset */
 	
+	
+	//================================================================================
+    // Constructors
+    //================================================================================
+
 	/**
 	 * Creates a new PredictionEngine instance from a File handle
 	 * holding the data
@@ -34,6 +43,7 @@ public class PredictionEngine
 	{
 		dataFile = fileName;
 		train();
+		// expandInput();
 	}
 
 	/**
@@ -56,20 +66,15 @@ public class PredictionEngine
 	}
 	
 
-	/**
-	 * [train description]
-	 */
-	private void train()
-	{
-		input(); // builds 'data'
-		expandInput(); // builds 'testPoints'
-	}
-	
+	//================================================================================
+    // Functions
+    //================================================================================
+
 	/**
 	 * Get data from file and store in data hashmap, then populate evidence term
 	 * and move-count variables
 	 */
-	private void input()
+	private void train()
 	{
 		Scanner line = null;
 		try {
@@ -239,7 +244,7 @@ public class PredictionEngine
 			result[2] = (int)(100*PY[2]);
 		}
 		
-		// Choose prediction over a probability distribution
+		// Choose prediction over a probability distribution (to increase variability)
 		char prediction;
 		double rand = Math.random();
 		double total = result[0] + result[1] + result[2];
@@ -420,6 +425,52 @@ public class PredictionEngine
 		}
 	}
 	
+
+	//================================================================================
+    // Testing functions	TODO: [Potentially] move to separate class
+    //================================================================================
+
+	public void expandInput()
+	{	
+		Scanner line = null;
+		try {
+			line = new Scanner(dataFile);
+		}
+		catch (IOException e) {
+			System.out.println("IOException has occured. Exiting.");
+			System.exit(1);
+		}
+
+		testPoints = new ArrayList<Datapoint>(44100);
+
+		// All terminal moves
+		while (line.hasNextLine() && line.hasNext())
+		{
+			String player = line.next();
+			String computer = line.next();
+				
+			int[] RPS = new int[3];
+			RPS[0] = line.nextInt();
+			RPS[1] = line.nextInt();
+			RPS[2] = line.nextInt();
+			
+			for (int i = 0; i < RPS[0]; i++)
+			{
+				testPoints.add(new Datapoint(player, computer, 'R'));
+			}
+			
+			for (int i = 0; i < RPS[1]; i++)
+			{
+				testPoints.add(new Datapoint(player, computer, 'P'));
+			}
+			
+			for (int i = 0; i < RPS[2]; i++)
+			{
+				testPoints.add(new Datapoint(player, computer, 'S'));
+			}
+		}
+	}
+
 	public void testAll(double testPercentage)
 	{
 		generateTestData(testPercentage);
@@ -548,48 +599,11 @@ public class PredictionEngine
 		PY[2] = numScissors / total;
 	}
 	
-	public void expandInput()
-	{	
-		Scanner line = null;
-		try {
-			line = new Scanner(dataFile);
-		}
-		catch (IOException e) {
-			System.out.println("IOException has occured. Exiting.");
-			System.exit(1);
-		}
 
-		testPoints = new ArrayList<Datapoint>(44100);
+	//================================================================================
+    // Inner-classes
+    //================================================================================
 
-		// All terminal moves
-		while (line.hasNextLine() && line.hasNext())
-		{
-			String player = line.next();
-			String computer = line.next();
-				
-			int[] RPS = new int[3];
-			RPS[0] = line.nextInt();
-			RPS[1] = line.nextInt();
-			RPS[2] = line.nextInt();
-			
-			for (int i = 0; i < RPS[0]; i++)
-			{
-				testPoints.add(new Datapoint(player, computer, 'R'));
-			}
-			
-			for (int i = 0; i < RPS[1]; i++)
-			{
-				testPoints.add(new Datapoint(player, computer, 'P'));
-			}
-			
-			for (int i = 0; i < RPS[2]; i++)
-			{
-				testPoints.add(new Datapoint(player, computer, 'S'));
-			}
-		}
-	}
-	
-	
 	public static class Datapoint
 	{
 		String player;
