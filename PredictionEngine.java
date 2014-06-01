@@ -7,6 +7,9 @@ public class PredictionEngine
 	// Fields
 	//================================================================================
 
+	final int ADDITIVE_SMOOTHING_FACTOR = 10;	/** Smoothing factor for Laplace smoothing */
+	final int ADDITIVE_SMOOTHING_CONST = 1;	/** Smoothing constant for Laplace smoothing */
+
 	// Optimal prediction algorithm vote-weights, determined through testing
 	final double NB_WEIGHT = .681;	/** Optimal Naive Bayes vote-weight */
 	final double FB_WEIGHT = .642;	/** Optimal Full Bayes vote-weight */
@@ -96,9 +99,9 @@ public class PredictionEngine
 			String key = line.next() + line.next();
 			
 			int[] RPS = new int[3];
-			RPS[0] = line.nextInt();
-			RPS[1] = line.nextInt();
-			RPS[2] = line.nextInt();
+			RPS[0] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
+			RPS[1] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
+			RPS[2] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
 			
 			numRocks += RPS[0];
 			numPapers += RPS[1];
@@ -450,9 +453,9 @@ public class PredictionEngine
 			String computer = line.next();
 				
 			int[] RPS = new int[3];
-			RPS[0] = line.nextInt();
-			RPS[1] = line.nextInt();
-			RPS[2] = line.nextInt();
+			RPS[0] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
+			RPS[1] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
+			RPS[2] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
 			
 			for (int i = 0; i < RPS[0]; i++)
 			{
@@ -601,8 +604,8 @@ public class PredictionEngine
 	
 
 	//================================================================================
-    // Inner-classes
-    //================================================================================
+	// Inner-classes
+	//================================================================================
 
 	public static class Datapoint
 	{
