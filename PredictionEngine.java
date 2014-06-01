@@ -3,43 +3,119 @@ import java.util.*;
 
 public class PredictionEngine
 {
-	HashMap<String, int[]> data;
-	ArrayList<Datapoint> testPoints;
-	
-	ArrayList<Datapoint> testData;
-    
-	File dataFile;
+	// Optimal prediction algorithm vote-weights, determined through testing
+	final double NB_WEIGHT = .681;	/** Optimal Naive Bayes vote-weight */
+	final double FB_WEIGHT = .642;	/** Optimal Full Bayes vote-weight */
+	final double ANN_WEIGHT = .639;/** Optimal Adapted Nearest Neighbor vote-weight */
 
-	double[] PY;
-	int numRocks, numPapers, numScissors;
+	File dataFile;	/** Handle to file holding the game data */
 	
+	/**
+	 * Container for all historical game data (courtesy of Shawn Bayern)
+	 * Maps concatenation of player and computer histories to counts of players' next
+	 * move at that game state (in previous played matches)
+	 */
+	HashMap<String, int[]> data;
 	
+	ArrayList<Datapoint> testPoints;
+	ArrayList<Datapoint> testData;
+
+	double[] PY;	/** Calculated evidence term for Full Bayes implementation */
+	int numRocks;	/** Number of instances where player played "rocks" in the dataset */
+	int numPapers;	/** Number of instances where player played "paper" in the dataset */
+	int numScissors;	/** Number of instances where player played "scissors" in the dataset */
+	
+	/**
+	 * Creates a new PredictionEngine instance from a File handle
+	 * holding the data
+	 * @param  fileName	- handle to File with hada
+	 */
 	public PredictionEngine(File fileName)
 	{
 		dataFile = fileName;
-		
-		try { train(); }
-		catch(IOException e)
-		{ System.out.println("IOException has occured. Exiting."); }
+		train();
 	}
-	
+
+	/**
+	 * Creates a new PredictionEngine instance from a specified file name
+	 * holding the data
+	 * @param  fileName	- name of file with data
+	 */	
 	public PredictionEngine(String fileName)
 	{
 		this(new File(fileName));
 	}
 	
+	/**
+	 * Creates a new PredictionEngine instance with default filename
+	 * of "openings.txt" for file holding the data
+	 */	
 	public PredictionEngine()
 	{
 		this(new File("openings.txt"));
 	}
 	
-	public void train() throws IOException
+
+	/**
+	 * [train description]
+	 */
+	private void train()
 	{
 		input(); // builds 'data'
 		expandInput(); // builds 'testPoints'
 	}
 	
-	int[] globalPlayerCounts, globalComputerCounts;
+	/**
+	 * Get data from file and store in data hashmap, then populate evidence term
+	 * and move-count variables
+	 */
+	private void input()
+	{
+		Scanner line = null;
+		try {
+			line = new Scanner(dataFile);
+		}
+		catch (IOException e) {
+			System.out.println("IOException has occured. Exiting.");
+			System.exit(1);
+		}
+		
+		data = new HashMap<String, int[]>(6210);
+
+		PY = new double[3];
+		numRocks = numPapers = numScissors = 0;
+		
+		// All terminal moves
+		while(line.hasNextLine() && line.hasNext())
+		{
+			String key = line.next() + line.next();
+			
+			int[] RPS = new int[3];
+			RPS[0] = line.nextInt();
+			RPS[1] = line.nextInt();
+			RPS[2] = line.nextInt();
+			
+			numRocks += RPS[0];
+			numPapers += RPS[1];
+			numScissors += RPS[2];
+			
+			data.put(key, RPS);
+		}
+		
+		double total = numRocks + numPapers + numScissors;
+		
+		PY[0] = numRocks / total;
+		PY[1] = numPapers / total;
+		PY[2] = numScissors / total;
+	}
+
+
+	/**
+	 * Uses Naive Bayes to generate a prediction for the player's next move
+	 * @param  player	- current history of player's moves
+	 * @param  computer	- current history of computer's moves
+	 * @return character ('R', 'P', or 'S') representing the predicted player's move
+	 */
 	public char naiveBayes(String player, String computer)
 	{
 		String key = player + computer;
@@ -50,21 +126,19 @@ public class PredictionEngine
 			player = player.substring(player.length()-5);
 			computer = computer.substring(computer.length()-5);
 		}
-		int lengthClass = player.length();
-		
-		// Generate every valid opponent move
-		globalPlayerCounts = new int[3];
-		generateComputerCombinations(player, "", player.length());
-		
-		// Generate every valid player move
-		globalComputerCounts = new int[3];
-		generatePlayerCombinations("", computer, computer.length());
+
+		// Generate every valid opponent and player move
+		int[] computerCounts = new int[3];
+		int[] playerCounts = new int[3];
+		generateComputerCombinations(player, "", player.length(), playerCounts, computerCounts);
+		generatePlayerCombinations("", computer, computer.length(), playerCounts, computerCounts);
 		
 		// P(Y|X)=P(X1|Y)*P(X2|Y)*P(Y)
-		double pRock = ((double)globalPlayerCounts[0]/numRocks) * ((double)globalComputerCounts[0]/numRocks) * PY[0];
-		double pPaper = ((double)globalPlayerCounts[1]/numPapers) * ((double)globalComputerCounts[1]/numPapers) * PY[1];
-		double pScissors = ((double)globalPlayerCounts[2]/numScissors) * ((double)globalComputerCounts[2]/numScissors) * PY[2];
+		double pRock = ((double)playerCounts[0]/numRocks) * ((double)computerCounts[0]/numRocks) * PY[0];
+		double pPaper = ((double)playerCounts[1]/numPapers) * ((double)computerCounts[1]/numPapers) * PY[1];
+		double pScissors = ((double)playerCounts[2]/numScissors) * ((double)computerCounts[2]/numScissors) * PY[2];
 		
+		// Return prediction based on calculated P(Y|X)
 		if (pRock > pPaper)
 		{
 			if (pRock > pScissors)
@@ -86,7 +160,15 @@ public class PredictionEngine
 		}
 	}
 	
-	public void generateComputerCombinations(String player, String partialHistory, int charsLeft)
+	/**
+	 * Generates all valid moves that the computer can make at the current (given) state
+	 * @param player	- given history of player
+	 * @param partialHistory	- current partial history
+	 * @param charsLeft	- represents the number of characters (moves) that can still be added
+	 * @param playerCounts	- reference to 3-tuple (R, P, and S counts) for player's state
+	 * @param computerCounts	- reference to 3-tuple (R, P, and S counts) for computer's state
+	 */
+	public void generateComputerCombinations(String player, String partialHistory, int charsLeft, int[] playerCounts, int[] computerCounts)
 	{
 		if (charsLeft == 0)
 		{
@@ -94,20 +176,28 @@ public class PredictionEngine
 			int[] result = data.get(key);
 			if (result != null)
 			{
-				globalPlayerCounts[0] += result[0];
-				globalPlayerCounts[1] += result[1];
-				globalPlayerCounts[2] += result[2];
+				playerCounts[0] += result[0];
+				playerCounts[1] += result[1];
+				playerCounts[2] += result[2];
 			}
+
+			return;
 		}
-		else
-		{
-			generateComputerCombinations(player, partialHistory.concat("r"), charsLeft-1);
-			generateComputerCombinations(player, partialHistory.concat("p"), charsLeft-1);
-			generateComputerCombinations(player, partialHistory.concat("s"), charsLeft-1);
-		}
+
+		generateComputerCombinations(player, partialHistory.concat("r"), charsLeft-1, playerCounts, computerCounts);
+		generateComputerCombinations(player, partialHistory.concat("p"), charsLeft-1, playerCounts, computerCounts);
+		generateComputerCombinations(player, partialHistory.concat("s"), charsLeft-1, playerCounts, computerCounts);
 	}
 	
-	public void generatePlayerCombinations(String partialHistory, String computer, int charsLeft)
+	/**
+	 * Generates all valid moves that the player can make at the current (given) state
+	 * @param player	- given history of player
+	 * @param partialHistory	- current partial history
+	 * @param charsLeft	- represents the number of characters (moves) that can still be added
+	 * @param playerCounts	- reference to 3-tuple (R, P, and S counts) for player's state
+	 * @param computerCounts	- reference to 3-tuple (R, P, and S counts) for computer's state
+	 */
+	public void generatePlayerCombinations(String partialHistory, String computer, int charsLeft, int[] playerCounts, int[] computerCounts)
 	{
 		if (charsLeft == 0)
 		{
@@ -115,19 +205,26 @@ public class PredictionEngine
 			int[] result = data.get(key);
 			if (result != null)
 			{
-				globalComputerCounts[0] += result[0];
-				globalComputerCounts[1] += result[1];
-				globalComputerCounts[2] += result[2];
+				computerCounts[0] += result[0];
+				computerCounts[1] += result[1];
+				computerCounts[2] += result[2];
 			}
+
+			return;
 		}
-		else
-		{
-			generatePlayerCombinations(partialHistory.concat("r"), computer, charsLeft-1);
-			generatePlayerCombinations(partialHistory.concat("p"), computer, charsLeft-1);
-			generatePlayerCombinations(partialHistory.concat("s"), computer, charsLeft-1);
-		}
+
+		generatePlayerCombinations(partialHistory.concat("r"), computer, charsLeft-1, playerCounts, computerCounts);
+		generatePlayerCombinations(partialHistory.concat("p"), computer, charsLeft-1, playerCounts, computerCounts);
+		generatePlayerCombinations(partialHistory.concat("s"), computer, charsLeft-1, playerCounts, computerCounts);
 	}
 	
+	/**
+	 * Uses "Full Bayes" (no conditional independence assumption) to generate a 
+	 * prediction for the player's next move
+	 * @param  player	- current history of player's moves
+	 * @param  computer	- current history of computer's moves
+	 * @return character ('R', 'P', or 'S') representing the predicted player's move
+	 */
 	public char fullBayes(String player, String computer)
 	{
 		String key = player + computer;
@@ -162,6 +259,13 @@ public class PredictionEngine
 		return prediction;
 	}
 	
+	/**
+	 * Uses "Adapted Nearest Neighbor" (essentially combining Full Bayes with a subgame
+	 * history search) to generate a prediction for the player's next move
+	 * @param  player	- current history of player's moves
+	 * @param  computer	- current history of computer's moves
+	 * @return character ('R', 'P', or 'S') representing the predicted player's move
+	 */
 	public char adaptedNN(String player, String computer)
 	{
 		String key = player + computer;
@@ -195,121 +299,96 @@ public class PredictionEngine
 		
 		return prediction;
 	}
-	
-	public void testAll(double testPercentage)
-	{
-		generateTestData(testPercentage);
+
+	/**
+	 * Uses the combination of Naive Bayes, Full Bayes, and Adapted Nearest Neighbor in an
+	 * ensemble-vote style to predict the player's next move from the current game history
+	 * @param  player	- history of player moves
+	 * @param  computer	- history of computer moves
+	 * @return the character ('R', 'P', 'S') representing the player's predicted move
+	 */
+	public char determineOptimalMove(String player, String computer) {
+		double R, P, S;
+		R = P = S = 0;
+
+		char nbPrediction, fbPrediction, annPrediction;
+
+		// get the Naive Bayes predicted move, increase the weight for corresponding computer move
+		nbPrediction = chooseMove(naiveBayes(player, computer));
+		if (nbPrediction == 'R') {
+			R += NB_WEIGHT;
+		}
+		else if (nbPrediction == 'P') {
+			P += NB_WEIGHT;
+		}
+		else {
+			S += NB_WEIGHT;
+		}
 		
-		testNaiveBayes();
-		testFullBayes();
-		testAdaptedNN();
+		// get the Full Bayes predicted move, increase the weight for corresponding computer move
+		fbPrediction = chooseMove(fullBayes(player, computer));
+		if (fbPrediction == 'R') {
+			R += FB_WEIGHT;
+		}
+		else if (fbPrediction == 'P') {
+			P += FB_WEIGHT;
+		}
+		else {
+			S += FB_WEIGHT;
+		}
+		
+		// get the Adapted Nearest Neighbor predicted move, increase the weight for corresponding computer move
+		annPrediction = chooseMove(adaptedNN(player, computer));
+		if (annPrediction == 'R') {
+			R += ANN_WEIGHT;
+		}
+		else if (annPrediction == 'P') {
+			P += ANN_WEIGHT;
+		}
+		else {
+			S += ANN_WEIGHT;
+		}
+		
+		// return optimal weighted computer move
+		if (R > P)
+		{
+			if (R > S)
+				return 'R';
+			else
+				return 'S';
+		}
+		else if (P > S)
+		{
+			return 'P';
+		}
+		else
+		{
+			return 'S';
+		}
 	}
 
-	public void testNaiveBayes()
+	/**
+	 * From a prediction, chooses the move for the computer that would win the game
+	 * @param  prediction	- prediction of the player's move
+	 * @return the suggested move for the computer
+	 */
+	public char chooseMove(char prediction)
 	{
-		int win = 0;
-		int draw = 0;
-		int loss = 0;
-		for (Datapoint dp : testData)
-		{
-			char prediction = naiveBayes(dp.player, dp.computer);
-			char myMove = chooseMove(prediction);
-			
-			char result = determineWinner(dp.result, myMove);
-			if (result == 'C')
-				win++;
-			else if (result == 'D')
-				draw++;
-			else
-				loss++;
-		}
-		System.out.println("Naive Bayes Test Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		if (prediction == 'R')
+			return 'P';
+		else if (prediction == 'P')
+			return 'S';
+		else
+			return 'R';
 	}
 	
-	public void testFullBayes()
-	{
-		int win = 0;
-		int draw = 0;
-		int loss = 0;
-		for (Datapoint dp : testData)
-		{
-			char prediction = fullBayes(dp.player, dp.computer);
-			char myMove = chooseMove(prediction);
-			
-			char result = determineWinner(dp.result, myMove);
-			if (result == 'C')
-				win++;
-			else if (result == 'D')
-				draw++;
-			else
-				loss++;
-		}
-		System.out.println("Full Bayes Test Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
-	}
-	
-	public void testAdaptedNN()
-	{
-		int win = 0;
-		int draw = 0;
-		int loss = 0;
-		for (Datapoint dp : testData)
-		{
-			char prediction = adaptedNN(dp.player, dp.computer);
-			char compMove = chooseMove(prediction);
-			
-			char result = determineWinner(dp.result, compMove);
-			if (result == 'C')
-				win++;
-			else if (result == 'D')
-				draw++;
-			else
-				loss++;
-		}
-		System.out.println("Adapted-NN Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
-	}
-	
-	public void input() throws IOException
-	{
-		Scanner line = new Scanner(dataFile);
-		
-		data = new HashMap<String, int[]>(6210);
-
-		PY = new double[3];
-		numRocks = numPapers = numScissors = 0;
-		
-		// All terminal moves
-		while(line.hasNextLine() && line.hasNext())
-		{
-			String key = line.next() + line.next();
-			
-			int[] RPS = new int[3];
-			RPS[0] = line.nextInt();
-			RPS[1] = line.nextInt();
-			RPS[2] = line.nextInt();
-			
-			numRocks += RPS[0];
-			numPapers += RPS[1];
-			numScissors += RPS[2];
-			
-			data.put(key, RPS);
-		}
-		
-		double total = numRocks + numPapers + numScissors;
-		
-		PY[0] = numRocks / total;
-		PY[1] = numPapers / total;
-		PY[2] = numScissors / total;
-	}
-	
+	/**
+	 * From both players' moves, determines the winner of that game
+	 * @param  playerMove	- character representing player's current move
+	 * @param  compMove	- character representing computer's current move
+	 * @return character ('H', 'C', 'D') representing who won the game: 'human',
+	 * 'computer', or 'draw'
+	 */
 	public char determineWinner(char playerMove, char compMove)
 	{
 		playerMove = Character.toUpperCase(playerMove);
@@ -341,14 +420,94 @@ public class PredictionEngine
 		}
 	}
 	
-	public char chooseMove(char prediction)
+	public void testAll(double testPercentage)
 	{
-		if (prediction == 'R')
-			return 'P';
-		else if (prediction == 'P')
-			return 'S';
-		else
-			return 'R';
+		generateTestData(testPercentage);
+		
+		testNaiveBayes();
+		testFullBayes();
+		testAdaptedNN();
+	}
+
+	public void testNaiveBayes()
+	{
+		int win = 0;
+		int draw = 0;
+		int loss = 0;
+		for (Datapoint dp : testData)
+		{
+			char prediction = naiveBayes(dp.player, dp.computer);
+			char myMove = chooseMove(prediction);
+			
+			char result = determineWinner(dp.result, myMove);
+			if (result == 'C') {
+				win++;
+			}
+			else if (result == 'D') {
+				draw++;
+			}
+			else {
+				loss++;
+			}
+		}
+		System.out.println("Naive Bayes Test Results");
+		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+	}
+	
+	public void testFullBayes()
+	{
+		int win = 0;
+		int draw = 0;
+		int loss = 0;
+		for (Datapoint dp : testData)
+		{
+			char prediction = fullBayes(dp.player, dp.computer);
+			char myMove = chooseMove(prediction);
+			
+			char result = determineWinner(dp.result, myMove);
+			if (result == 'C') {
+				win++;
+			}
+			else if (result == 'D') {
+				draw++;
+			}
+			else {
+				loss++;
+			}
+		}
+		System.out.println("Full Bayes Test Results");
+		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+	}
+	
+	public void testAdaptedNN()
+	{
+		int win = 0;
+		int draw = 0;
+		int loss = 0;
+		for (Datapoint dp : testData)
+		{
+			char prediction = adaptedNN(dp.player, dp.computer);
+			char compMove = chooseMove(prediction);
+			
+			char result = determineWinner(dp.result, compMove);
+			if (result == 'C') {
+				win++;
+			}
+			else if (result == 'D') {
+				draw++;
+			}
+			else {
+				loss++;
+			}
+		}
+		System.out.println("Adapted-NN Results");
+		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
 	}
 	
 	public void generateTestData(double testPercentage)
@@ -389,11 +548,18 @@ public class PredictionEngine
 		PY[2] = numScissors / total;
 	}
 	
-	public void expandInput() throws IOException
-	{
+	public void expandInput()
+	{	
+		Scanner line = null;
+		try {
+			line = new Scanner(dataFile);
+		}
+		catch (IOException e) {
+			System.out.println("IOException has occured. Exiting.");
+			System.exit(1);
+		}
+
 		testPoints = new ArrayList<Datapoint>(44100);
-		
-		Scanner line = new Scanner(dataFile);
 
 		// All terminal moves
 		while (line.hasNextLine() && line.hasNext())
