@@ -37,7 +37,7 @@ public class PredictionEngine
 	/**
 	 * Creates a new PredictionEngine instance from a File handle
 	 * holding the data
-	 * @param  fileName	- handle to File with hada
+	 * @param  fileName	- handle to File with data
 	 */
 	public PredictionEngine(File fileName)
 	{
@@ -58,7 +58,7 @@ public class PredictionEngine
 	
 	/**
 	 * Creates a new PredictionEngine instance with default filename
-	 * of "openings.txt" for file holding the data
+	 * of "openings.txt" for file with the data
 	 */	
 	public PredictionEngine()
 	{
