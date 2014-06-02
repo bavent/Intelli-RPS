@@ -27,7 +27,7 @@ public class PredictionEngine
 	ArrayList<Datapoint> testPoints;
 	ArrayList<Datapoint> testData;
 
-	double[] PY;	/** Calculated evidence term for Full Bayes implementation */
+	double[] PY;	/** Calculated prior for Bayes implementations */
 	int numRocks;	/** Number of instances where player played "rocks" in the dataset */
 	int numPapers;	/** Number of instances where player played "paper" in the dataset */
 	int numScissors;	/** Number of instances where player played "scissors" in the dataset */
@@ -74,8 +74,7 @@ public class PredictionEngine
 	//================================================================================
 
 	/**
-	 * Get data from file and store in data hashmap, then populate evidence term
-	 * and move-count variables
+	 * Get data from file and store in data hashmap, then populate both the prior and move-count variables
 	 */
 	private void train()
 	{
