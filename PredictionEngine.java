@@ -27,10 +27,16 @@ public class PredictionEngine
 	ArrayList<Datapoint> testPoints;
 	ArrayList<Datapoint> testData;
 
-	double[] PY;	/** Calculated prior for Bayes implementations */
 	int numRocks;	/** Number of instances where player played "rocks" in the dataset */
 	int numPapers;	/** Number of instances where player played "paper" in the dataset */
 	int numScissors;	/** Number of instances where player played "scissors" in the dataset */
+	/**
+	 * Calculated prior for Bayes implementations, such that:
+	 * PY[0] := unconditional probability of Rock
+	 * PY[1] := unconditional probability of Paper
+	 * PY[2] := unconditional probability of Scissors
+	 */
+	double[] PY;
 	
 	
 	//================================================================================
@@ -99,8 +105,8 @@ public class PredictionEngine
 			
 			int[] RPS = new int[3];
 			RPS[0] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
-			RPS[1] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
 			RPS[2] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
+			RPS[1] = line.nextInt()*ADDITIVE_SMOOTHING_FACTOR + ADDITIVE_SMOOTHING_CONST;
 			
 			numRocks += RPS[0];
 			numPapers += RPS[1];
