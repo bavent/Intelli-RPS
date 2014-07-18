@@ -15,7 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class RPSPanel extends JPanel implements ActionListener {
+public class GuiRunner extends JPanel implements ActionListener {
 
 	private JButton rockButton,
 					paperButton,
@@ -42,16 +42,16 @@ public class RPSPanel extends JPanel implements ActionListener {
 	private static GridBagConstraints c;
 	
 	public static void main(String[] args) throws IOException {
-		rockIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("rock.png")));
-		paperIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("paper.png")));
-		scissorsIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("scissors.png")));
-		cRockIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("Crock.png")));
-		cPaperIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("Cpaper.png")));
-		cScissorsIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("Cscissors.png")));
-		defaultIcon = new ImageIcon(ImageIO.read( RPSPanel.class.getResourceAsStream("default.png")));
+		rockIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/rock.png")));
+		paperIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/paper.png")));
+		scissorsIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/scissors.png")));
+		cRockIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/Crock.png")));
+		cPaperIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/Cpaper.png")));
+		cScissorsIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/Cscissors.png")));
+		defaultIcon = new ImageIcon(ImageIO.read(GuiRunner.class.getResourceAsStream("images/default.png")));
 		
 		JFrame f = new RPSFrame();
-	    f.show();
+	    f.setVisible(true);
 	    
 	    wins = 0;
 	    ties = 0;
@@ -62,7 +62,7 @@ public class RPSPanel extends JPanel implements ActionListener {
 	    engine = new PredictionEngine();
 	}
 	
-	public RPSPanel()
+	public GuiRunner()
 	{
 		setLayout(new GridBagLayout());
 	    c = new GridBagConstraints();
@@ -129,7 +129,7 @@ public class RPSPanel extends JPanel implements ActionListener {
 			}); // addWindowLister
 
 			Container contentPane = getContentPane();
-			contentPane.add(new RPSPanel());
+			contentPane.add(new GuiRunner());
 		}
 	}
 

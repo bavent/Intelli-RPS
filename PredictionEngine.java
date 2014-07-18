@@ -71,7 +71,7 @@ public class PredictionEngine
 	 */	
 	public PredictionEngine()
 	{
-		this(new File("openings.txt"));
+		this(new File("data/openings.txt"));
 	}
 	
 
