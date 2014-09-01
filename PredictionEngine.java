@@ -11,9 +11,9 @@ public class PredictionEngine
 	final int ADDITIVE_SMOOTHING_CONST = 1;	/** Smoothing constant for Laplace smoothing */
 
 	// Optimal prediction algorithm vote-weights, determined through testing
-	final double NB_WEIGHT = .681;	/** Optimal Naive Bayes vote-weight */
-	final double FB_WEIGHT = .642;	/** Optimal Full Bayes vote-weight */
-	final double ANN_WEIGHT = .639;	/** Optimal Adapted Nearest Neighbor vote-weight */
+	final double NB_WEIGHT = 0.34710;	/** Optimal Naive Bayes vote-weight */
+	final double FB_WEIGHT = 0.32721;	/** Optimal Full Bayes vote-weight */
+	final double ANN_WEIGHT = 0.32569;	/** Optimal Adapted Nearest Neighbor vote-weight */
 
 	File dataFile;	/** Handle to file holding the game data */
 	
