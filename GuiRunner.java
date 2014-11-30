@@ -75,7 +75,7 @@ public class GuiRunner extends JPanel implements ActionListener {
 		scissorsButton = new JButton("Scissors");
 		pMove = new JLabel(defaultIcon);
 		cMove = new JLabel(defaultIcon);
-		stats = new JLabel("Winning: -% (0-0-0/0)");
+		stats = new JLabel("Win/Loss: -% (0-0-0/0)");
 		resetButton = new JButton("Reset");
 		
 		c.weightx = 1;
@@ -160,7 +160,7 @@ public class GuiRunner extends JPanel implements ActionListener {
 			ties = 0;
 			losses = 0;
 			wins = 0;
-			stats.setText("Winning: -% (0-0-0/0)");
+			stats.setText("Win/Loss: -% (0-0-0/0)");
 			pMove.setIcon(defaultIcon);
 			cMove.setIcon(defaultIcon);
 			return;
@@ -212,8 +212,8 @@ public class GuiRunner extends JPanel implements ActionListener {
 		{
 			ties++;
 		}
-		double percent = wins / games;
-		String s = String.format("Winning %2.2f%% (%d-%d-%d/%d)", percent, (int) wins, (int) ties, (int) losses, (int) games);
+		double percent = wins / (wins + losses);
+		String s = String.format("Win/Loss: %2.2f%% (%d-%d-%d/%d)", percent, (int) wins, (int) ties, (int) losses, (int) games);
 		stats.setText(s);
 	}
 }
