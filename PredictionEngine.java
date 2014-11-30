@@ -7,13 +7,12 @@ public class PredictionEngine
 	// Fields
 	//================================================================================
 
-	final int ADDITIVE_SMOOTHING_FACTOR = 10;	/** Smoothing factor for Laplace smoothing */
+	final int ADDITIVE_SMOOTHING_FACTOR = 5;	/** Smoothing factor for Laplace smoothing */
 	final int ADDITIVE_SMOOTHING_CONST = 1;	/** Smoothing constant for Laplace smoothing */
 
-	// Optimal prediction algorithm vote-weights, determined through testing
-	final double NB_WEIGHT = 0.34710;	/** Optimal Naive Bayes vote-weight */
-	final double FB_WEIGHT = 0.32721;	/** Optimal Full Bayes vote-weight */
-	final double ANN_WEIGHT = 0.32569;	/** Optimal Adapted Nearest Neighbor vote-weight */
+	// Optimal prediction algorithm vote-weights for Naive Bayes, Full Bayes, and Adapted Nearest Neighbor
+	// algorithms, determined through testing at the object's construction
+	double NB_WEIGHT, FB_WEIGHT, ANN_WEIGHT;
 
 	File dataFile;	/** Handle to file holding the game data */
 	
@@ -52,7 +51,7 @@ public class PredictionEngine
 	{
 		dataFile = fileName;
 		train();
-		// expandInput();
+		testAll(0.1); // use 10% of data for testing
 	}
 
 	/**
@@ -435,7 +434,7 @@ public class PredictionEngine
 	
 
 	//================================================================================
-	// Testing functions	TODO: [Potentially] move to separate class
+	// Testing functions; generates vote-weights for the different algorithms
 	//================================================================================
 
 	public void expandInput()
@@ -481,14 +480,19 @@ public class PredictionEngine
 
 	public void testAll(double testPercentage)
 	{
+		expandInput();
 		generateTestData(testPercentage);
 		
-		testNaiveBayes();
-		testFullBayes();
-		testAdaptedNN();
+		double nb_percent = testNaiveBayes();
+		double fb_percent = testFullBayes();
+		double ann_percent = testAdaptedNN();
+
+		NB_WEIGHT = nb_percent / (nb_percent + fb_percent + ann_percent);
+		FB_WEIGHT = fb_percent / (nb_percent + fb_percent + ann_percent);
+		ANN_WEIGHT = ann_percent / (nb_percent + fb_percent + ann_percent);
 	}
 
-	public void testNaiveBayes()
+	public double testNaiveBayes()
 	{
 		int win = 0;
 		int draw = 0;
@@ -509,13 +513,14 @@ public class PredictionEngine
 				loss++;
 			}
 		}
-		System.out.println("Naive Bayes Test Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		// System.out.println("Naive Bayes Test Results");
+		// System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		// System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		// System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		return (double)win/(win+draw+loss);
 	}
 	
-	public void testFullBayes()
+	public double testFullBayes()
 	{
 		int win = 0;
 		int draw = 0;
@@ -536,13 +541,14 @@ public class PredictionEngine
 				loss++;
 			}
 		}
-		System.out.println("Full Bayes Test Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		// System.out.println("Full Bayes Test Results");
+		// System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		// System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		// System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		return (double)win/(win+draw+loss);
 	}
 	
-	public void testAdaptedNN()
+	public double testAdaptedNN()
 	{
 		int win = 0;
 		int draw = 0;
@@ -563,10 +569,11 @@ public class PredictionEngine
 				loss++;
 			}
 		}
-		System.out.println("Adapted-NN Results");
-		System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
-		System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
-		System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		// System.out.println("Adapted-NN Results");
+		// System.out.println("Wins: " + win + ", Draws: " + draw + " , Losses: " + loss);
+		// System.out.println("Win percent (-Draws): " + (double)win/(win+loss));
+		// System.out.println("Win percent (+Draws): " + (double)win/(win+draw+loss) + "\n");
+		return (double)win/(win+draw+loss);
 	}
 	
 	public void generateTestData(double testPercentage)
